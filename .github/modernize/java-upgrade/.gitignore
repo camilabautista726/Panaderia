@@ -1,0 +1,12 @@
+# Archivos compilados
+*.class
+target/
+out/
+
+# Configuración de IDE
+.idea/
+.vscode/
+
+# Archivos del sistema
+.DS_Store
+
