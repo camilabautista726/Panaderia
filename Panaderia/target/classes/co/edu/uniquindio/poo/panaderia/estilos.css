@@ -1,0 +1,9 @@
+.fondo {
+    -fx-background-color: #2f2f2f;
+    -fx-background-image: url('Imagenes/fondoPan.png');
+    -fx-background-repeat: repeat;
+}
+.panel {
+    -fx-background-color: rgba(255, 255, 255, 0.10);
+    -fx-background-radius: 20;
+}
