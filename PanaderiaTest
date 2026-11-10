@@ -1,1 +1,196 @@
+package co.edu.uniquindio.poo.panaderia.test;
 
+import java.util.logging.Logger;
+
+import co.edu.uniquindio.poo.panaderia.model.*;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.*;
+//IMPORTANTE MENSAJE PARA EL PROFE: para correr las pruebas abrir la terminal y ejecutar el comando .\mvnw.cmd test
+// ya que solo se puede hacer desde el maven debido a que intellij presenta problemas con el run ajenos al proyecto
+
+/**
+ * Pruebas unitarias para la clase Panaderia.
+ *
+ * @author Mariana Suarez Bran y Laura Camila Bautista
+ * @since 2026-11
+ */
+public class PanaderiaTest {
+
+    private static final Logger LOG = Logger.getLogger(PanaderiaTest.class.getName());
+
+    private Panaderia panaderia;
+
+    @BeforeEach
+    public void setUp() {
+        panaderia = new Panaderia("Panaderia", "556365");
+    }
+
+    @Test
+    @DisplayName("El pedido conserva sus datos, queda pendiente y los minutos de los empleados no cambian")
+    public void registrarPedidoQuedaPendiente() {
+        LOG.info("Inicio de la prueba que conserva los datos y verifica el estado pendiente");
+
+        Pedido pedido= new Pedido ("P01", "Juan Esteban", TipoPan.TRADICIONAL, 25, EstadoPedido.PENDIENTE);
+        panaderia.registrarPedido(pedido);
+        Panadero panaderoUno = new PanaderoArtesanal("Juan Pablo Ortega", "23507831", "PA01", 90);
+        panaderia.registrarEmpleado(panaderoUno);
+
+        assertEquals(EstadoPedido.PENDIENTE, pedido.getEstado());
+        assertEquals("P01", pedido.getCodigo());
+        assertEquals("Juan Esteban", pedido.getNombreCliente());
+        assertEquals(TipoPan.TRADICIONAL, pedido.getTipoPan());
+        assertEquals(25, pedido.getCantidad());
+        assertEquals(90, panaderoUno.getMinutosDisponibles());
+
+        LOG.info("Fin de la prueba que conserva los datos y verifica su estado pendiente");
+    }
+    @Test
+    @DisplayName("El pedido se conserva en el historial en estado  cancelado  y se lanza IllegalArgumentException")
+    public void registrarPedidoCancelado() {
+        LOG.info("Inicio de la prueba de registrar pedido cancelado");
+
+        Pedido original= new Pedido ("P09", "Juan", TipoPan.TRADICIONAL, 25, EstadoPedido.PENDIENTE);
+        panaderia.registrarPedido(original);
+        panaderia.cancelarPedido(original);
+
+        Pedido pedidoNuevo= new Pedido ("P09", "Michelle", TipoPan.TRADICIONAL, 12, EstadoPedido.PENDIENTE);
+
+        assertThrows(IllegalArgumentException.class, ()-> panaderia.registrarPedido(pedidoNuevo));
+        assertEquals(1, panaderia.getListaPedidos().size());
+        assertEquals(EstadoPedido.CANCELADO, panaderia.getListaPedidos().get(0).getEstado());
+
+        LOG.info("Fin de la prueba de registrar pedido cancelado");
+    }
+    @Test
+    @DisplayName("Registrar un pedido de cero panes lanza IllegalArgumentException y el historial queda vacío")
+    public void registrarPedidoCantidadCero() {
+        LOG.info("Inicio de la prueba de registrar pedido con cantidad cero");
+
+        Pedido pedidoCero = new Pedido("P02", "Ana", TipoPan.TRADICIONAL, 0, EstadoPedido.PENDIENTE);
+
+        assertThrows(IllegalArgumentException.class, () -> panaderia.registrarPedido(pedidoCero));
+        assertEquals(0, panaderia.getListaPedidos().size());
+
+        LOG.info("Fin de la prueba de registrar pedido con cantidad cero");
+    }
+    @Test
+    @DisplayName("Registrar panaderos y asignarle el pedido a quien tenga el tiempo disponible")
+    public void asignarPedidos() {
+        LOG.info("Inicio de prueba para asignar a quien tenga el tiempo disponible");
+        Empleado panaderaAna= new PanaderoArtesanal ("Ana", "23507830", "PA71", 100);
+        panaderia.registrarEmpleado(panaderaAna);
+        Empleado panaderoCarlos= new PanaderoIndustrial ("Carlos", "23507905", "PI01", 45);
+        panaderia.registrarEmpleado(panaderoCarlos);
+        Pedido pedidoVeiniticinco= new Pedido ("P01", "Juan esteban", TipoPan.TRADICIONAL, 25, EstadoPedido.PENDIENTE);
+        panaderia.registrarPedido(pedidoVeiniticinco);
+        Panadero panaderoAsignado= panaderia.seleccionarPanadero(pedidoVeiniticinco).get();
+        panaderia.asignarPedido(panaderoAsignado, pedidoVeiniticinco.getCodigo());
+        assertEquals(panaderoCarlos.getCodigo(), pedidoVeiniticinco.getCodigoEmpleado());
+        assertEquals(0, panaderoCarlos.getMinutosDisponibles());
+        assertEquals(100, panaderaAna.getMinutosDisponibles());
+        LOG.info("Fin de la prueba que asigna a quien tenga el tiempo disponible");
+    }
+
+    @Test
+    @DisplayName("Registrar panaderos y asignarle el pedido a quien tenga el tiempo disponible, en este caso, al primero registrado")
+    public void asignarPedidosDos() {
+        LOG.info("Inicio de prueba para asignar a quien tenga el tiempo disponible");
+        Empleado panaderaAnaDos= new PanaderoArtesanal ("Ana", "23507837", "PA11", 80);
+        panaderia.registrarEmpleado(panaderaAnaDos);
+        Empleado panaderaDiana= new PanaderoArtesanal ("Diana", "2350321", "PA12", 80);
+        panaderia.registrarEmpleado(panaderaDiana);
+        Empleado panaderoCarlosDos= new PanaderoIndustrial ("Carlos", "12507905", "PI11", 54);
+        panaderia.registrarEmpleado(panaderoCarlosDos);
+        Pedido pedidoTrece= new Pedido ("P11", "Juan Esteban", TipoPan.INTEGRAL, 13, EstadoPedido.PENDIENTE);
+        panaderia.registrarPedido(pedidoTrece);
+        //Asignar el panadero al pedido
+        Panadero panaderoAsignado= panaderia.seleccionarPanadero(pedidoTrece).get();
+        panaderia.asignarPedido(panaderoAsignado, pedidoTrece.getCodigo());
+        //Equals: En el primero debe quedar AnaDos como la panadera del pedido
+        assertEquals(panaderaAnaDos.getCodigo(), pedidoTrece.getCodigoEmpleado());
+        //Minutos de Diana y CarlosDos deben quedar iguales
+        assertEquals(54, panaderoCarlosDos.getMinutosDisponibles());
+        assertEquals(80, panaderaDiana.getMinutosDisponibles());
+        LOG.info("Fin de la prueba que asigna a quien tenga el tiempo disponible");
+    }
+
+    @Test
+    @DisplayName("Se lanza IllegalStateException. El pedido sigue PENDIENTE y Carlos y Lucía conservan sus minutos.")
+    public void asignarPedido25Panes() {
+        LOG.info("Inicio de la prueba de registro de pedido de 25 panes");
+        Panadero carlos= new PanaderoIndustrial("Carlos", "1091392875", "PI02", 44);
+        panaderia.registrarEmpleado(carlos);
+        Empleado lucia= new Cajero ("Lucia", "1092567921", "CJ01", 120, 1);
+        panaderia.registrarEmpleado(lucia);
+
+        Pedido pedido4= new Pedido ("P01", "Juan esteban", TipoPan.TRADICIONAL, 25, EstadoPedido.PENDIENTE);
+        panaderia.registrarPedido(pedido4);
+
+        assertThrows(IllegalStateException.class, ()-> panaderia.asignarPedido(carlos , pedido4.getCodigo()));
+        assertEquals(EstadoPedido.PENDIENTE, panaderia.getListaPedidos().get(0).getEstado());
+        assertEquals(44, carlos.getMinutosDisponibles());
+        assertEquals(120, lucia.getMinutosDisponibles());
+
+        LOG.info("Fin de la prueba de registro de pedido de 25 panes");
+    }
+    @Test
+    @DisplayName("Cancelar pedido y devolver minutos")
+    public void cancelarPedido() {
+        LOG.info("Inicio de prueba para cancelar pedido");
+        Empleado carlosTres= new PanaderoIndustrial("Carlos", "12556905", "PI21", 120);
+        panaderia.registrarEmpleado(carlosTres);
+        Pedido pedidoVent= new Pedido ("P21", "José", TipoPan.TRADICIONAL, 25, EstadoPedido.PENDIENTE);
+        panaderia.registrarPedido(pedidoVent);
+        Pedido pedidoVentD= new Pedido ("P22", "Maria", TipoPan.TRADICIONAL, 25, EstadoPedido.PENDIENTE);
+        panaderia.registrarPedido(pedidoVentD);
+        //Asignar el panadero al pedido Vent
+        Panadero panaderoAsignado= panaderia.seleccionarPanadero(pedidoVent).get();
+        panaderia.asignarPedido(panaderoAsignado, pedidoVent.getCodigo());
+        //Asignar el panadero al pedido VentD
+        Panadero panaderoAsignadoDos= panaderia.seleccionarPanadero(pedidoVentD).get();
+        panaderia.asignarPedido(panaderoAsignadoDos, pedidoVentD.getCodigo());
+        //Cancelar el primer pedido
+        panaderia.cancelarPedido(pedidoVent);
+        //Resultados
+        assertEquals(75, carlosTres.getMinutosDisponibles());
+        assertEquals(EstadoPedido.CANCELADO, pedidoVent.getEstado());
+        assertEquals(EstadoPedido.ASIGNADO, pedidoVentD.getEstado());
+        LOG.info("Fin de la prueba para cancelar el pedido");
+    }
+
+    @Test
+    @DisplayName("Cancelar el pedido aún cuando hay un panadero con tiempo disponible")
+    public void cancelarPedidosHayUnPanadero() {
+        LOG.info("Inicio de prueba para cancelar pedido aún cuando hay un panadero con tiempo disponible");
+        Empleado panaderoConTiempo= new PanaderoIndustrial("Mario", "6372395", "PI31", 100);
+        panaderia.registrarEmpleado(panaderoConTiempo);
+        Pedido pedidoPendiente= new Pedido ("P31", "Juan Esteban", TipoPan.TRADICIONAL, 12, EstadoPedido.PENDIENTE);
+        panaderia.registrarPedido(pedidoPendiente);
+        panaderia.cancelarPedido(pedidoPendiente);
+        assertEquals(100, panaderoConTiempo.getMinutosDisponibles());
+        assertEquals(EstadoPedido.CANCELADO, pedidoPendiente.getEstado());
+        LOG.info("Fin de la prueba para cancelar el pedido");
+    }
+    @Test
+    @DisplayName("Se lanza IllegalStateException y el tiempo reservado se devuelve una sola vez.")
+    public void cancelarPedidoCancelado() {
+        LOG.info("Inicio de la prueba de cancelar pedido cancelado");
+
+        Pedido pedido5= new Pedido ("P05", "Kevin", TipoPan.TRADICIONAL, 12, EstadoPedido.PENDIENTE);
+        Panadero panadero= new PanaderoIndustrial("Carlos", "1091392875", "PI02", 120);
+        panaderia.registrarEmpleado(panadero);
+        panaderia.registrarPedido(pedido5);
+        panaderia.asignarPedido(panadero, pedido5.getCodigo());
+        assertEquals(75, panadero.getMinutosDisponibles());
+        panaderia.cancelarPedido(pedido5);
+
+        assertThrows(IllegalStateException.class, ()-> panaderia.cancelarPedido(pedido5));
+        assertEquals(120, panadero.getMinutosDisponibles());
+
+        LOG.info("Fin de la prueba de canelar pedido cancelado");
+    }
+
+}
